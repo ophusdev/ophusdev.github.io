@@ -1,2 +1,0 @@
-const __vite__fileDeps=["_astro/go-weather.CzlFsFFb.js","_astro/hoisted.C9AmvHCV.js","_astro/astro/assets-service.UPL31UwL.js","_astro/render-template.BEYdpJPm.js"],__vite__mapDeps=i=>i.map(i=>__vite__fileDeps[i]);
-import{_ as t}from"./astro/assets-service.UPL31UwL.js";async function o(){return t(()=>import("./go-weather.CzlFsFFb.js"),__vite__mapDeps([0,1,2,3]))}const e="@@ASTRO-LINKS@@",c="@@ASTRO-STYLES@@",r="@@ASTRO-SCRIPTS@@",l={__astroPropagation:!0,getMod:o,collectedLinks:e,collectedStyles:c,collectedScripts:r};export{l as default};
