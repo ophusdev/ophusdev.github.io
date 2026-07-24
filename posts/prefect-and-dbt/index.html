@@ -1,0 +1,194 @@
+<!DOCTYPE html><html class="scroll-smooth" lang="it-IT"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><title>Prefect e dbt su dati veri: la pipeline di MoviesGraph • OphusDev</title><link href="/icon.svg" rel="icon" type="image/svg+xml"><link rel="icon" href="/favicon-32x32.png" type="image/png"><link href="/icons/apple-touch-icon.png" rel="apple-touch-icon"><link href="/manifest.webmanifest" rel="manifest"><link href="https://ophusdev.github.io/posts/prefect-and-dbt/" rel="canonical"><meta content="Prefect e dbt su dati veri: la pipeline di MoviesGraph • OphusDev" name="title"><meta content="Perché ho scelto Prefect e dbt per un progetto personale, e cosa ho imparato usandoli su un dataset grande e disordinato come quello di IMDb" name="description"><meta content="OphusDev" name="author"><meta content="article" property="og:type"><meta content="Prefect e dbt su dati veri: la pipeline di MoviesGraph" property="og:title"><meta content="Perché ho scelto Prefect e dbt per un progetto personale, e cosa ho imparato usandoli su un dataset grande e disordinato come quello di IMDb" property="og:description"><meta content="https://ophusdev.github.io/posts/prefect-and-dbt/" property="og:url"><meta content="OphusDev" property="og:site_name"><meta content="it_IT" property="og:locale"><meta content="https://ophusdev.github.io/og-image/prefect-and-dbt.png" property="og:image"><meta content="1200" property="og:image:width"><meta content="630" property="og:image:height"><meta content="OphusDev" property="article:author"><meta content="2026-07-23T22:00:00.000Z" property="article:published_time"><meta content="summary_large_image" property="twitter:card"><meta content="https://ophusdev.github.io/posts/prefect-and-dbt/" property="twitter:url"><meta content="Prefect e dbt su dati veri: la pipeline di MoviesGraph" property="twitter:title"><meta content="Perché ho scelto Prefect e dbt per un progetto personale, e cosa ho imparato usandoli su un dataset grande e disordinato come quello di IMDb" property="twitter:description"><meta content="https://ophusdev.github.io/og-image/prefect-and-dbt.png" property="twitter:image"><link href="/sitemap-index.xml" rel="sitemap"><link href="/rss.xml" title="Blog" rel="alternate" type="application/rss+xml"><link href="/notes/rss.xml" title="Notes" rel="alternate" type="application/rss+xml"><meta content="Astro v7.1.3" name="generator"><link rel="stylesheet" href="/_astro/Base.BOhe0mzH.css"><script type="module" src="/_astro/page.CmFj6_gu.js"></script></head><body class="bg-global-bg text-global-text mx-auto flex min-h-screen max-w-3xl flex-col px-4 pt-16 font-mono text-sm font-normal antialiased sm:px-8"><script>
+	const lightModePref = window.matchMedia("(prefers-color-scheme: light)");
+
+	function getUserPref() {
+		const storedTheme = typeof localStorage !== "undefined" && localStorage.getItem("theme");
+		return storedTheme || (lightModePref.matches ? "light" : "dark");
+	}
+
+	function setTheme(newTheme) {
+		if (newTheme !== "light" && newTheme !== "dark") {
+			return console.warn(
+				`Invalid theme value '${newTheme}' received. Expected 'light' or 'dark'.`,
+			);
+		}
+
+		const root = document.documentElement;
+
+		// root already set to newTheme, exit early
+		if (newTheme === root.getAttribute("data-theme")) {
+			return;
+		}
+
+		root.setAttribute("data-theme", newTheme);
+
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem("theme", newTheme);
+		}
+	}
+
+	// initial setup
+	setTheme(getUserPref());
+
+	// View Transitions hook to restore theme
+	document.addEventListener("astro:after-swap", () => setTheme(getUserPref()));
+
+	// listen for theme-change custom event, fired in src/components/ThemeToggle.astro
+	document.addEventListener("theme-change", (e) => {
+		setTheme(e.detail.theme);
+	});
+
+	// listen for prefers-color-scheme change.
+	lightModePref.addEventListener("change", (e) => setTheme(e.matches ? "light" : "dark"));
+</script><a class="sr-only focus:not-sr-only focus:fixed focus:start-1 focus:top-1.5" href="#main">skip to content</a><header class="group relative mb-28 flex items-center sm:ps-18" id="main-header"><div class="flex sm:flex-col"><a aria-current="false" class="inline-flex items-center grayscale hover:filter-none sm:relative sm:inline-block" href="/"><!--<svg
+				aria-hidden="true"
+				class="me-3 h-10 w-6 sm:absolute sm:-start-18 sm:me-0 sm:h-20 sm:w-12"
+				fill="none"
+				focusable="false"
+				viewBox="0 0 272 480"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<title>Logo</title>
+				<path
+					d="M181.334 93.333v-40L226.667 80v40l-45.333-26.667ZM136.001 53.333 90.667 26.667v426.666L136.001 480V53.333Z"
+					fill="#B04304"></path>
+				<path
+					d="m136.001 119.944 45.333-26.667 45.333 26.667-45.333 26.667-45.333-26.667ZM90.667 26.667 136.001 0l45.333 26.667-45.333 26.666-45.334-26.666ZM181.334 53.277l45.333-26.666L272 53.277l-45.333 26.667-45.333-26.667ZM0 213.277l45.333-26.667 45.334 26.667-45.334 26.667L0 213.277ZM136 239.944l-45.333-26.667v53.333L136 239.944Z"
+					fill="#FF5D01"></path>
+				<path
+					d="m136 53.333 45.333-26.666v120L226.667 120V80L272 53.333V160l-90.667 53.333v240L136 480V306.667L45.334 360V240l45.333-26.667v53.334L136 240V53.333Z"
+					fill="#53C68C"></path>
+				<path d="M45.334 240 0 213.334v120L45.334 360V240Z" fill="#B04304"></path>
+			</svg>--><span class="text-xl font-bold sm:text-2xl">OphusDev</span></a><nav aria-label="Main menu" class="bg-global-bg/85 text-accent sm:divide-accent absolute -inset-x-4 top-14 hidden flex-col items-end gap-y-4 rounded-md py-4 shadow backdrop-blur-sm group-[.menu-open]:z-50 group-[.menu-open]:flex sm:static sm:z-auto sm:-ms-4 sm:mt-1 sm:flex sm:flex-row sm:items-center sm:divide-x sm:rounded-none sm:bg-transparent sm:py-0 sm:shadow-none sm:backdrop-blur-none" id="navigation-menu"><a aria-current="false" class="px-4 py-4 underline-offset-2 hover:underline sm:py-0" data-astro-prefetch href="/">Home</a><a aria-current="false" class="px-4 py-4 underline-offset-2 hover:underline sm:py-0" data-astro-prefetch href="/posts/">Blog</a><a aria-current="false" class="px-4 py-4 underline-offset-2 hover:underline sm:py-0" data-astro-prefetch href="/projects/">Projects</a><a aria-current="false" class="px-4 py-4 underline-offset-2 hover:underline sm:py-0" data-astro-prefetch href="/notes/">Notes</a></nav></div><site-search class="ms-auto" id="search"><button class="hover:text-accent flex h-9 w-9 cursor-pointer items-center justify-center rounded-md" aria-keyshortcuts="Control+K Meta+K" data-open-modal disabled><svg aria-hidden="true" class="h-7 w-7" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0z" stroke="none"></path><path d="M3 10a7 7 0 1 0 14 0 7 7 0 1 0-14 0M21 21l-6-6"></path></svg><span class="sr-only">Open Search</span></button><dialog aria-label="search" class="bg-global-bg h-full max-h-full w-full max-w-full border border-zinc-400 shadow-sm backdrop:backdrop-blur-sm open:flex sm:mx-auto sm:mt-16 sm:mb-auto sm:h-max sm:max-h-[calc(100%-8rem)] sm:min-h-[15rem] sm:w-5/6 sm:max-w-[48rem] sm:rounded-md"><div class="dialog-frame flex grow flex-col gap-4 p-6 pt-12 sm:pt-6"><button class="ms-auto cursor-pointer rounded-md bg-zinc-200 p-2 font-semibold dark:bg-zinc-700" data-close-modal>Close</button><div class="search-container"><div id="cactus__search"></div></div></div></dialog></site-search><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.W5n8MXqb.js"></script><theme-toggle class="ms-2 sm:ms-4"><button class="hover:text-accent relative h-9 w-9 cursor-pointer rounded-md p-2" type="button"><span class="sr-only">Dark Theme</span><svg aria-hidden="true" class="absolute start-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 scale-100 opacity-100 transition-all dark:scale-0 dark:opacity-0" fill="none" focusable="false" id="sun-svg" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 12L23 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 2V1" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 23V22" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M20 20L19 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M20 4L19 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 20L5 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 4L5 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><path d="M1 12L2 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg><svg aria-hidden="true" class="absolute start-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100" fill="none" focusable="false" id="moon-svg" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0z" fill="none" stroke="none"></path><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"></path><path d="M17 4a2 2 0 0 0 2 2a2 2 0 0 0 -2 2a2 2 0 0 0 -2 -2a2 2 0 0 0 2 -2"></path><path d="M19 11h2m-1 -1v2"></path></svg></button></theme-toggle><script type="module" src="/_astro/ThemeToggle.astro_astro_type_script_index_0_lang.BBw6qaf9.js"></script><mobile-button><button aria-expanded="false" aria-haspopup="menu" class="group relative ms-4 h-7 w-7 sm:invisible sm:hidden" id="toggle-navigation-menu" type="button"><span class="sr-only">Open main menu</span><svg aria-hidden="true" class="absolute start-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 transition-all group-aria-expanded:scale-0 group-aria-expanded:opacity-0" fill="none" focusable="false" id="line-svg" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3.75 9h16.5m-16.5 6.75h16.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><svg aria-hidden="true" class="text-accent absolute start-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0 transition-all group-aria-expanded:scale-100 group-aria-expanded:opacity-100" class="text-accent" fill="none" focusable="false" id="cross-svg" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></mobile-button></header><script type="module" src="/_astro/Header.astro_astro_type_script_index_0_lang.BESQ7zQP.js"></script><main id="main"><article class="grow break-words" data-pagefind-body><div id="blog-hero" class="mb-12"><h1 class="title">Prefect e dbt su dati veri: la pipeline di MoviesGraph</h1><div class="flex flex-wrap items-center gap-x-3 gap-y-2"><p class="font-semibold"><time datetime="2026-07-23T22:00:00.000Z" title="2026-07-23T22:00:00.000Z">24 luglio 2026</time> / 7 min read</p><span class="bg-quote/5 text-quote rounded-lg px-2 py-1">Updated:<time datetime="2026-07-23T22:00:00.000Z" title="2026-07-23T22:00:00.000Z" class="ms-1">24 luglio 2026</time></span></div><div class="mt-2"><svg aria-hidden="true" class="inline-block h-6 w-6" fill="none" focusable="false" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h24v24H0z" fill="none" stroke="none"></path><path d="M7.859 6h-2.834a2.025 2.025 0 0 0 -2.025 2.025v2.834c0 .537 .213 1.052 .593 1.432l6.116 6.116a2.025 2.025 0 0 0 2.864 0l2.834 -2.834a2.025 2.025 0 0 0 0 -2.864l-6.117 -6.116a2.025 2.025 0 0 0 -1.431 -.593z"></path><path d="M17.573 18.407l2.834 -2.834a2.025 2.025 0 0 0 0 -2.864l-7.117 -7.116"></path><path d="M6 9h-.01"></path></svg><span class="contents"><a class="cactus-link inline-block before:content-['#']" data-pagefind-filter="tag:data engineering" href="/tags/data engineering/"><span class="sr-only">View more blogs with the tag&nbsp;</span>data engineering</a>, </span><span class="contents"><a class="cactus-link inline-block before:content-['#']" data-pagefind-filter="tag:prefect" href="/tags/prefect/"><span class="sr-only">View more blogs with the tag&nbsp;</span>prefect</a>, </span><span class="contents"><a class="cactus-link inline-block before:content-['#']" data-pagefind-filter="tag:dbt" href="/tags/dbt/"><span class="sr-only">View more blogs with the tag&nbsp;</span>dbt</a>, </span><span class="contents"><a class="cactus-link inline-block before:content-['#']" data-pagefind-filter="tag:elt" href="/tags/elt/"><span class="sr-only">View more blogs with the tag&nbsp;</span>elt</a></span></div></div><div class="flex flex-col gap-10 lg:flex-row lg:items-start"><details open class="lg:sticky lg:top-12 lg:order-2 lg:-me-32 lg:basis-64"><summary class="title hover:marker:text-accent cursor-pointer text-lg">Table of Contents</summary><nav class="ms-4 lg:w-full"><ol class="mt-4"><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#il-contesto-dati-veri-non-dati-da-demo"><span aria-hidden="true" class="me-0.5">#</span>Il contesto: dati veri, non dati da demo</a></li><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#prima-decisione-elt-non-etl"><span aria-hidden="true" class="me-0.5">#</span>Prima decisione: ELT, non ETL</a></li><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#prefect-lorchestrazione-dove-serve-davvero"><span aria-hidden="true" class="me-0.5">#</span>Prefect: l’orchestrazione dove serve davvero</a></li><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#dbt-la-trasformazione-come-contratto"><span aria-hidden="true" class="me-0.5">#</span>dbt: la trasformazione come contratto</a></li><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#un-principio-che-tiene-tutto-insieme-chi-possiede-lo-schema"><span aria-hidden="true" class="me-0.5">#</span>Un principio che tiene tutto insieme: chi possiede lo schema</a></li><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#la-vetrina-api-e-frontend"><span aria-hidden="true" class="me-0.5">#</span>La vetrina: API e frontend</a></li><li class><a class="line-clamp-2 hover:text-accent mt-3" href="#cosa-mi-porto-a-casa"><span aria-hidden="true" class="me-0.5">#</span>Cosa mi porto a casa</a></li></ol></nav></details><div class="prose prose-sm prose-headings:font-semibold prose-headings:text-accent-2 prose-headings:before:absolute prose-headings:before:-ms-4 prose-headings:before:text-gray-600 prose-headings:hover:before:text-accent sm:prose-headings:before:content-['#'] sm:prose-th:before:content-none"><p>Ogni tanto ho bisogno di un progetto abbastanza
+grande e abbastanza disordinato da mettere davvero alla prova una
+tecnologia.</p>
+<p>Il pretesto, questa volta, è stato <a href="https://moviesgraph.ophus.dev/" rel="noreferrer noopener" target="_blank"><strong>MoviesGraph</strong></a>: un’applicazione che
+prende i dataset pubblici di IMDb e li trasforma in un grafo navigabile
+di film, serie e persone. C’è un backend FastAPI e un frontend React che
+disegna il grafo, ma quelli sono la vetrina. Il vero motivo per cui ho
+costruito tutto questo è un altro: volevo capire <strong>Prefect</strong> e <strong>dbt</strong> in
+un contesto reale.</p>
+<h2 id="il-contesto-dati-veri-non-dati-da-demo"><a class="not-prose" href="#il-contesto-dati-veri-non-dati-da-demo">Il contesto: dati veri, non dati da demo</a></h2>
+<p>I <a href="https://developer.imdb.com/non-commercial-datasets/" rel="noreferrer noopener" target="_blank">dataset non commerciali di IMDb</a>
+sono perfetti proprio perché sono scomodi:</p>
+<ul>
+<li>sono <strong>grandi</strong> — <code>title.principals</code> da solo è nell’ordine dei 100
+milioni di righe;</li>
+<li>arrivano come <strong>snapshot completi</strong> giornalieri, senza nessun segnale
+di cosa è cambiato: niente <code>updated_at</code>;</li>
+<li>sono <code>.tsv.gz</code> con valori nulli codificati come <code>\N</code> e campi che a volte
+non rispettano quello che promettono.</li>
+</ul>
+<h2 id="prima-decisione-elt-non-etl"><a class="not-prose" href="#prima-decisione-elt-non-etl">Prima decisione: ELT, non ETL</a></h2>
+<p>La tentazione classica è ETL: scarico, trasformo in Python, carico il
+risultato pulito. L’ho adottata diverse volte, ma questa volta non poteva reggere il carico,
+così l’ho scartata subito.</p>
+<p>Con questi volumi, il percorso più veloce per far entrare i dati in
+Postgres è <code>COPY</code>, e lo è di ordini di grandezza rispetto a qualunque
+ciclo Python riga-per-riga. E una volta che i dati grezzi sono già dentro
+al database, trasformarli con SQL è di nuovo molto più veloce che tirarli fuori,
+manipolarli in memoria e riscriverli.</p>
+<p>Quindi: prima carico i byte grezzi, poi trasformo in SQL.</p>
+<p><strong>ELT</strong>.</p>
+<p>E questo divide naturalmente il lavoro in due strati, con due strumenti
+diversi: Prefect orchestra l’estrazione e il caricamento, dbt si occupa
+della trasformazione. Ognuno fa la cosa per cui è nato.</p>
+<h2 id="prefect-lorchestrazione-dove-serve-davvero"><a class="not-prose" href="#prefect-lorchestrazione-dove-serve-davvero">Prefect: l’orchestrazione dove serve davvero</a></h2>
+<p>Prefect governa il primo strato: inizializza lo schema, scarica i quattro
+dataset <strong>in parallelo</strong> e li carica in tabelle di staging. Fin qui niente
+di speciale, un cron e uno script farebbero lo stesso. Il punto è cosa
+succede quando qualcosa va storto, ed è lì che ho voluto vedere se
+Prefect ripagava la sua presenza.</p>
+<p>Alcune decisioni che ho preso sfruttando l’orchestrazione:</p>
+<p><strong>Il caricamento è transazionale.</strong> <code>TRUNCATE + COPY + controllo del numero di righe + upsert dei metadati</code>, tutto in un’unica transazione. Se
+qualcosa fallisce, come per esempio la rete che cade, un file malformato, un conteggio righe
+troppo basso, la transazione fa rollback e <strong>il caricamento
+precedente sopravvive intatto</strong>. Non mi ritrovo mai con dati a metà.</p>
+<p><strong>I “floor” sul numero di righe.</strong> <code>COPY</code> non sa distinguere un file
+valido da una pagina di errore servita con HTTP 200, o da un gzip troncato
+che però si decomprime senza errori. Ho messo delle soglie minime (circa
+un terzo delle dimensioni attuali): se il file “è valido ma con poche righe rispetto al normale”, il
+caricamento viene rifiutato.</p>
+<p><strong>Download condizionali.</strong> Salvo <code>ETag</code> e <code>Last-Modified</code> di ogni dataset;
+al giro successivo mando <code>If-None-Match</code> e mi fermo su un HTTP 304. IMDb
+aggiorna una volta al giorno, quindi una ri-esecuzione infragiornaliera
+costa un round-trip HTTP invece di qualche gigabyte scaricato di nuovo.</p>
+<p><strong>Il modello di fallimento è esplicito.</strong> Le task hanno retry, il flow
+fallisce in modo pulito se un dataset non arriva (e in quel caso dbt <strong>non
+parte proprio</strong>), e il deployment ha <code>limit=1</code> così
+due run non si pestano i piedi. Tutto questo, in Prefect, è dichiarativo:
+basta descriverlo, non implementarlo a mano con try/except annidati.</p>
+<p>Il valore vero di Prefect, ho scoperto essere la <strong>UI e la semantica degli
+stati</strong>: quando una run fallisce alle quattro di notte, la mattina dopo
+vedo esattamente quale task, con quali log, e in che stato ha lasciato il
+sistema.</p>
+<h2 id="dbt-la-trasformazione-come-contratto"><a class="not-prose" href="#dbt-la-trasformazione-come-contratto">dbt: la trasformazione come contratto</a></h2>
+<p>Se Prefect porta i dati grezzi dentro, dbt li rende affidabili. Qui ho
+strutturato tutto su due livelli:</p>
+<ul>
+<li><strong>staging (viste):</strong> convertono il <code>TEXT</code> grezzo nei tipi reali, tolgono
+i prefissi <code>tt</code>/<code>nm</code> dagli ID trasformandoli in chiavi <code>bigint</code>, e
+filtrano in base allo scopo del prodotto (film e serie, attori e
+attrici). Sono viste, quindi “costruirle” non costa nulla;</li>
+<li><strong>marts (tabelle):</strong> il contratto di servizio vero e proprio, quello che
+l’API legge.</li>
+</ul>
+<p>Le decisioni interessanti, di nuovo, sono quelle che emergono solo con
+dati veri.</p>
+<p><strong>Materializzazione <code>table</code>, non incrementale.</strong> L’istinto dice
+“incrementale, così ricostruisci solo ciò che cambia”. Ma IMDb pubblica
+snapshot completi <em>senza</em> alcun segnale di cambiamento. Le strategie
+incrementali hanno bisogno di sapere quali righe sono cambiate; senza
+quell’informazione, accumulano duplicati. La ricostruzione
+completa da snapshot è <strong>garantita corretta</strong>, e in più dbt fa un
+create-swap-drop atomico: i lettori vedono la vecchia tabella fino al
+commit, poi la nuova. Deploy a downtime quasi zero, gratis. A volte la
+scelta “meno furba” è quella giusta.</p>
+<p><strong>Gli indici vivono nel modello.</strong> Ogni indice è dichiarato
+nel <code>config(indexes=[...])</code> del suo modello, così l’adapter lo crea sulla
+nuova tabella <em>prima</em> dello swap atomico. Ci ero arrivato dopo aver
+sbagliato: con dei post-hook <code>CREATE INDEX IF NOT EXISTS</code>, l’indice
+“esisteva già” sulla tabella vecchia rinominata come backup, veniva saltato,
+e spariva insieme al backup. Un bug invisibile finché non degradano le
+query. Ogni indice, poi, esiste per un preciso pattern di query del
+backend — GIN trigram per la ricerca <code>UPPER(x) LIKE '%…%'</code>, btree per gli
+<code>ORDER BY</code>.</p>
+<p><strong>I test come cancello, non come contorno.</strong> Uso <code>dbt build</code>, non
+<code>dbt run</code>: i test girano <strong>tra</strong> un modello e l’altro. Un test di unicità
+o di integrità referenziale che fallisce <strong>ferma i modelli a valle</strong>, così
+i dati sbagliati non arrivano mai ai marts. L’integrità la garantisco con
+inner join nei marts più questi test, non con vincoli FK. È stato costruendo
+questi test che ho scoperto verità sui dati che non conoscevo: per esempio
+che la coppia film/attore <strong>non</strong> è unica, perché una persona può avere
+più ruoli nello stesso titolo.</p>
+<h2 id="un-principio-che-tiene-tutto-insieme-chi-possiede-lo-schema"><a class="not-prose" href="#un-principio-che-tiene-tutto-insieme-chi-possiede-lo-schema">Un principio che tiene tutto insieme: chi possiede lo schema</a></h2>
+<p>Una cosa che questo progetto mi ha chiarito è il principio di <strong>un solo
+proprietario per schema</strong>. dbt possiede lo schema <code>imdb</code>, Prefect possiede
+<code>staging</code>, e il backend non li tocca. Non esistono migrazioni scritte a
+mano per i dati: <strong>il codice SQL dei modelli dbt in git <em>è</em> la definizione
+dello schema.</strong> Il backend si connette con un
+utente in un ruolo <code>api_readonly</code> e fisicamente non può né
+scrivere su <code>imdb</code> né leggere <code>staging</code>.</p>
+<p>È un livello di rigore che su un progetto personale non era obbligatorio.
+L’ho messo apposta, perché volevo vedere se dbt reggeva il ruolo di
+“unica fonte di verità dello schema”.</p>
+<p>Regge.</p>
+<h2 id="la-vetrina-api-e-frontend"><a class="not-prose" href="#la-vetrina-api-e-frontend">La vetrina: API e frontend</a></h2>
+<p>Il backend FastAPI e il frontend React ci sono, funzionano, e servono il
+grafo, ma sono solo la conseguenza.
+Esistono per dare un motivo concreto a tutte quelle scelte fatte a monte:
+gli indici esistono per <em>quelle</em> query, i marts hanno <em>quella</em>
+forma perché è quella che l’API consuma. Senza qualcosa che legge davvero
+i dati, ogni decisione sulla pipeline sarebbe stata teorica.
+Inoltre, con un frontend i dati sono navigabili molto più facilmente.</p>
+<h2 id="cosa-mi-porto-a-casa"><a class="not-prose" href="#cosa-mi-porto-a-casa">Cosa mi porto a casa</a></h2>
+<p>Prefect e dbt, alla prova dei dati veri, hanno ripagato la loro presenza.</p>
+<p>Di <strong>Prefect</strong> ho apprezzato meno “l’orchestrazione” in sé e più
+l’osservabilità e il modello di fallimento esplicito: sapere sempre in che
+stato è il sistema dopo una notte andata storta.</p>
+<p>Di <strong>dbt</strong> mi ha convinto l’idea del database come artefatto versionato:
+lo schema è codice, i test sono un cancello, lo swap è atomico. Rende la
+trasformazione dei dati, da script usa-e-getta, qualcosa che assomiglia
+a ingegneria del software vera.</p>
+<p>La lezione più generale è quella di sempre: una tecnologia la capisci solo
+quando la rompi. E per romperla ti serve un pretesto.</p></div></div></article><button class="hover:border-link fixed end-4 bottom-8 z-90 flex h-10 w-10 translate-y-28 cursor-pointer items-center justify-center rounded-full border-2 border-transparent bg-zinc-200 text-3xl opacity-0 transition-all transition-discrete duration-300 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 sm:end-8 sm:h-12 sm:w-12 dark:bg-zinc-700" data-show="false" id="to-top-btn"><span class="sr-only">Back to top</span><svg aria-hidden="true" class="h-6 w-6" fill="none" focusable="false" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 15.75l7.5-7.5 7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></main><footer class="mt-auto flex w-full flex-col items-center justify-center gap-y-2 pt-20 pb-4 text-center align-top font-semibold text-gray-600 sm:flex-row sm:justify-between sm:text-xs dark:text-gray-400"><div class="me-0 sm:me-4">&copy; OphusDev2026.<span class="inline-block">&nbsp;🚀&nbsp;OphusDev</span></div><nav aria-labelledby="footer_links" class="flex gap-x-2 sm:gap-x-0 sm:divide-x sm:divide-gray-500"><p id="footer_links" class="sr-only">More on this site</p><a class="hover:text-global-text px-4 py-2 hover:underline sm:py-0" href="/">Home</a><a class="hover:text-global-text px-4 py-2 hover:underline sm:py-0" href="/posts/">Blog</a><a class="hover:text-global-text px-4 py-2 hover:underline sm:py-0" href="/projects/">Projects</a><a class="hover:text-global-text px-4 py-2 hover:underline sm:py-0" href="/notes/">Notes</a></nav></footer></body></html><script type="module">var e=document.getElementById(`to-top-btn`),t=document.getElementById(`blog-hero`);function n(t){t.forEach(t=>{e.dataset.show=(!t.isIntersecting).toString()})}e.addEventListener(`click`,()=>{document.documentElement.scrollTo({behavior:`smooth`,top:0})}),new IntersectionObserver(n).observe(t);</script>
