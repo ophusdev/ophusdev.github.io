@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ophus.dev/sitemap-index.xml
